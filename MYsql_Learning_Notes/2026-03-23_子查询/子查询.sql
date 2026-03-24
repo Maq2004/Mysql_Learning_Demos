@@ -199,6 +199,14 @@ WHERE
 
 
 	
+	-- 若employees表中employee_id与job_history表中employee_id相同的数目不小于2，输出这些相同id的员工的employee_id,last_name和其job_id
+	
+	
+	SELECT employee_id, last_name,job_id FROM employees e WHERE 2 <= (
+																																SELECT COUNT(*)
+																																FROM job_history j
+																																WHERE j.employee_id = e.employee_id
+	);
 	
 	
 	
@@ -206,13 +214,45 @@ WHERE
 	
 	
 	
+	-- 题目：查询公司管理者的employee_id，last_name，job_id，department_id信息
+	
+SELECT
+	employee_id,
+	last_name,
+	job_id,
+	department_id 
+FROM
+	employees 
+WHERE
+	employee_id = ANY (
+											SELECT DISTINCT
+												manager_id 
+											FROM
+												employees 
+	)
+	
+-- 方法2
+	
+SELECT DISTINCT
+	mgr.employee_id,
+	mgr.last_name,
+	mgr.job_id,
+	mgr.department_id 
+FROM
+	employees emp
+	JOIN employees mgr ON emp.manager_id = mgr.employee_id;
 	
 	
-	
-	
-	
-	
-	
+	-- 方法三
+SELECT
+	employee_id,
+	last_name,
+	job_id,
+	department_id 
+FROM
+	employees e1 
+WHERE
+	EXISTS ( SELECT * FROM employees e2 WHERE e2.manager_id = e1.employee_id );
 	
 	
 	
