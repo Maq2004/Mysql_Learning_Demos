@@ -138,6 +138,13 @@ WHERE employee_id = 101; -- 同理，删除也是
 -- 删除视图 
 DROP VIEW IF EXISTS emp_sal;
 
+-- 修改视图
+
+ALTER VIEW emp_sal
+AS
+SELECT employee_id, salary FROM emps;
+
+
 
  -- 如果视图c基于视图A和视图B创建，那么删除视图A和B会导致c查询失败，需要手动修改
  
