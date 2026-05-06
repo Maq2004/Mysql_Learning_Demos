@@ -1,0 +1,77 @@
+1. ***描述一下当你创建一个 MyISAM 表和 InnoDB 表时，去 `/var/lib/mysql` 下看，它们长得有什么不同？为什么说 MyISAM 更容易“缺胳膊少腿”？***
+
+   ​	在InnoDB 5.7 中，InnoDB表用两个文件来描述一个表 ， 使用table.frm 来描述表的字段, 使用table.ibd来描述表的数据。在8.0中更是使用一个文件来描述一张表。
+
+   ​	而MyISAM 5.7 则是用三个文件来描述一张表，table.frm来描述表的字段，table.MYD来描述表的数据，table.MYI来描述表的索引。在8.0中将table.frm修改为了table.sdi.
+
+   ​	在写入的时候如果遇到突发状况，例如写入时断电可能会导致MyISAM表的.MYD 或者.MYI丢失，因为他们是分开的.
+
+   
+
+   ​	
+
+2. ***在 5.7 版本里，如果你想看一张表的表结构，你可以直接通过 `.frm` 寻找。到了 8.0，这个文件没了，它去哪了？这对你做数据库物理迁移（直接拷文件）有什么潜在风险？***
+
+   ​	.frm 文件被集成到了.ibd文件中。在数据库物理迁移中会造成找不到文件的错误。
+
+   
+
+3. ***如果一个 InnoDB 库的磁盘爆了，你是希望它当初开启了 `innodb_file_per_table=1` 还是没有开启？为什么？***
+
+   ​	这个选项是选择使用系统表空间（放在和数据库平级的ibdata1中）还是选择独立表空间。
+
+   ​	在使用独立表空间的情况下，删除表或者大量数据时这个 `.ibd` 文件会被删除或缩小，磁盘空间会立刻还给操作系统。
+
+   ​	在使用系统表空间的情况下，所有的表数据会挤在ibdata1中，即使删掉了大量的数据和表，ibdata1的体积也不会缩小。
+
+   ​	所以我希望是使用独立表空间（**innodb_file_per_table=1**），这样才能快速的清理数据将空间还给系统
+
+   
+
+4. ***如果测试过程中发现某个接口响应时间极长，你怀疑是数据库执行慢，你应该去 `performance_schema` 还是 `information_schema` 找答案？为什么？***
+
+   ​	去performance_schema中查看，这是监测数据库系统中监测数据库指标的数据库。
+
+   
+
+5. ***自动化测试脚本如果需要动态获取某个库里所有的表名和字段类型，应该去查哪个系统数据库？请写出查询逻辑。***
+
+   ​	应该去information_schema数据库中寻找。
+
+   ```mysql
+   SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE 
+   FROM information_schema.COLUMNS 
+   WHERE TABLE_SCHEMA = 'test_db';
+   ```
+
+   
+
+6. ***运维要给测试人员开一个“只能看、不能删”的账号，这个信息最终会固化在 `mysql` 库的哪几张核心表里？***
+
+   ​       mysql.user：存账户名、密码哈希，以及**全局权限**（是不是拥有所有库的增删改查权限）。
+
+   ​       mysql.db：库级别。规定这个账号对**特定数据库**（比如只能看 `test_env` 库）有什么权限。
+
+   ​       mysql.tables_priv / mysql.columns_priv：表级别/列级别。规定它对某张特定的表，甚至某个具体的字段的权限。
+
+   
+
+    
+
+7. ***5.7 环境迁移到 8.0 时，关于数据库字符集的配置，以前可以看每个文件夹下的 `db.opt`，现在你会去哪里确认？***	
+
+   ```mysql
+   -- 做法 1：直接看建库语句
+   SHOW CREATE DATABASE test_db;
+   
+   -- 做法 2：查元数据
+   SELECT DEFAULT_CHARACTER_SET_NAME 
+   FROM information_schema.SCHEMATA 
+   WHERE SCHEMA_NAME = 'test_db';
+   ```
+
+   
+
+8. ***如果你的测试环境是 8.0，但线上环境是 5.7，基于你学到的物理文件差异，你认为可能会在哪些操作上踩到坑？***
+
+​		备份还原,无论是MyISAM还是InnoDB ，5.7 和8.0 版本所描述一张表用的后缀都是不一样的。
