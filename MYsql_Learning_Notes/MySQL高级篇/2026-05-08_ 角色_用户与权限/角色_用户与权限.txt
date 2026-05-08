@@ -1,0 +1,63 @@
+/*
+ * • 登录服务器:
+ * mysql -h hostname -P port -u username -p DatabaseName -e "SQL语句" [cite: 7]
+ * - 默认端口为 3306 [cite: 10, 11]。
+   *
+ * • 创建用户:
+ * CREATE USER '用户名'@'主机名' IDENTIFIED BY '密码'; [cite: 20]
+ * - 主机名参数由用户(User)和主机名(Host)构成 [cite: 21]。
+ * - 若不指定主机名，默认 host 为 '%' [cite: 25]。
+   *
+ * • 修改用户:
+ * UPDATE mysql.user SET USER='新用户名' WHERE USER='旧用户名'; [cite: 28]
+ * FLUSH PRIVILEGES; [cite: 29]
+    *
+ * • 删除用户 (强烈推荐):
+ * DROP USER '用户名'@'主机名'; [cite: 36]
+ * - 优点: 同时删除用户记录及对应的权限记录，不会像 DELETE 方式产生残留 [cite: 80]。
+   *
+ * • 密码管理:
+ * - 修改当前用户密码: ALTER USER USER() IDENTIFIED BY '新密码'; [cite: 87]
+ * - 设置密码过期: ALTER USER 'user'@'host' PASSWORD EXPIRE; [cite: 104]
+ * - 密码重用限制: SET PERSIST password_history = 6; (最近6个密码不能重复) [cite: 124]
+   *
+ * ------------------------------------------------------------------------------
+ * 2. 权限管理 (Privilege Management)
+ * ------------------------------------------------------------------------------
+ * • 核心原则:
+ * - 只授予能满足需要的最小权限，防止安全隐患 [cite: 151]。
+ * - 限制登录主机，为每个用户设置复杂密码 [cite: 152, 153]。
+   *
+ * • 授权操作:
+ * GRANT 权限1, 权限2 ON 数据库名.表名 TO '用户名'@'主机地址'; [cite: 158]
+ * - 例如: GRANT SELECT, INSERT ON db.* TO 'li4'@'localhost'; [cite: 162]
+   *
+ * • 收回权限:
+ * REVOKE 权限 ON 数据库名.表名 FROM '用户名'@'主机地址'; [cite: 181]
+ * - 注意: 须用户重新登录后才能生效 [cite: 187]。
+   *
+ * • 权限核实层级 (由上至下检查): [cite: 262, 263]
+ * 1. mysql.user (全局层级) [cite: 189]
+ * 2. mysql.db (数据库层级) [cite: 236]
+ * 3. mysql.tables_priv (表层级) [cite: 242]
+ * 4. mysql.columns_priv (列层级) [cite: 242]
+   *
+ * ------------------------------------------------------------------------------
+ * 3. 角色管理 (Role Management - 简化权限分配)
+ * ------------------------------------------------------------------------------
+ * • 引入目的: 方便管理拥有相同权限的用户 [cite: 265]。
+    *
+ * • 角色操作流程:
+ * 1. 创建角色: CREATE ROLE 'role_name'; [cite: 273]
+ * 2. 角色授权: GRANT SELECT ON db.* TO 'role_name'; [cite: 280]
+ * 3. 赋予用户: GRANT 'role_name' TO 'username'@'host'; [cite: 348]
+ * 4. 激活角色 (必须执行):
+ * - 方式A: SET DEFAULT ROLE ALL TO 'username'@'host'; [cite: 364]
+ * - 方式B: SET GLOBAL activate_all_roles_on_login=ON; (全自动激活) [cite: 382]
+   *
+ * • 查看角色/权限:
+ * SHOW GRANTS FOR 'role_or_user'; [cite: 321]
+ * SELECT CURRENT_ROLE(); (查看当前已激活的角色) [cite: 355]
+    *
+ * ==============================================================================
+    */
